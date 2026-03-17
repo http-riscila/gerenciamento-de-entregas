@@ -1,13 +1,10 @@
 import './App.css';
-import macacoImg from './assets/macaco.webp';
+import Home from './pages/Home';
 
-function App() {
+export default function App() {
   return (
     <>
-    <h1>Página Inicial</h1>
-    <img src={macacoImg} alt='macaco'/>
+    <Home />
     </>
   )
 }
-
-export default App
