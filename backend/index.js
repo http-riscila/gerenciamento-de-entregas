@@ -1,10 +1,6 @@
-import express from 'express';
-import cors from 'cors';
-const app = express();
-const PORT = process.env.PORT || 3000;
+import app from "./src/app.js";
 
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
   res.json({ mensagem: "API do Gerenciador de Entregas rodando!" });

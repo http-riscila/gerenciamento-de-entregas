@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Recipient {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(200)
+  cpf          String     @unique @db.VarChar(14)
+  phone_number String     @db.VarChar(20)
+  email        String     @db.VarChar(100)
+  addresses    Address[]
+  deliveries   Delivery[]
+
+  @@map("tbRecipients")
+}
+
+model Address {
+  id           Int       @id @default(autoincrement())
+  recipient_id Int
+  street       String    @db.VarChar(200)
+  number       String    @db.VarChar(20)
+  neighborhood String    @db.VarChar(100)
+  city         String    @db.VarChar(100)
+  state        String    @db.VarChar(2)
+  recipient    Recipient @relation(fields: [recipient_id], references: [id])
+
+  @@map("tbAddresses")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(200)
+  email        String        @unique @db.VarChar(100)
+  password     String        @db.VarChar(255)
+  role         Role
+  deliveries   Delivery[]    @relation("DriverDeliveries")
+  modifiedLogs DeliveryLog[]
+
+  @@map("tbUsers")
+}
+
+enum Role {
+  ADMIN
+  LOGISTICS
+  DRIVER
+}
+
+model Delivery {
+  id           Int           @id @default(autoincrement())
+  created_at   DateTime      @default(now())
+  recipient_id Int
+  driver_id    Int?
+  status       Status        @default(REQUESTED)
+  modified_at  DateTime      @updatedAt
+  recipient    Recipient     @relation(fields: [recipient_id], references: [id])
+  driver       User?         @relation("DriverDeliveries", fields: [driver_id], references: [id])
+  logs         DeliveryLog[]
+
+  @@map("tbDeliveries")
+}
+
+enum Status {
+  REQUESTED
+  AWAITING_PICKUP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+model DeliveryLog {
+  id          Int      @id @default(autoincrement())
+  delivery_id Int
+  status_novo String
+  user_id     Int
+  modified_at DateTime @default(now())
+  note        String?  @db.Text
+  delivery    Delivery @relation(fields: [delivery_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
+
+  @@map("tbDeliveryLog")
+}
