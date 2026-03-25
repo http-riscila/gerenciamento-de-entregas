@@ -23,7 +23,7 @@ export default function LandingPage(){
                                 tecnologia líder em visibilidade logística.
                             </p>
                             
-                            <div className="d-flex justify-content-center justify-content-md-center">
+                            <div className="d-flex justify-content-center justify-content-md-start">
                                 <Link 
                                     to={'/entrar'}
                                     className="btn btn-corporate btn-lg px-5 py-3 rounded-pill shadow-lg fw-bold btn-hover-effect"
