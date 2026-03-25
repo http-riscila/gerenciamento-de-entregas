@@ -17,7 +17,7 @@ export default function Home(){
 
     return(
         <div className="bg-light min-vh-100 d-flex flex-column">
-            <Navbar />
+            <Navbar isLandingPage={false} />
             
             <main className="container flex-grow-1 mb-5">
                 <div className="text-center mt-5 mb-4">

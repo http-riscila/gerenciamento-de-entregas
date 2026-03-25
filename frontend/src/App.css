@@ -77,3 +77,30 @@
   background-color: var(--footer-gray) !important;
   color: var(--footer-text) !important;
 }
+
+/* Estado Base do Botão de Acesso */
+.btn-hover-effect {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    position: relative;
+    overflow: hidden;
+    /* A transição 'all' cuida de todas as mudanças de uma vez */
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(26, 35, 126, 0.1);
+}
+
+/* Efeito ao Passar o Mouse (Hover) */
+.btn-hover-effect:hover {
+    background-color: #0d145a !important; /* Um azul mais profundo e sério */
+    color: #ffffff !important;
+    /* Sombra mais difusa para dar efeito de profundidade/elevação */
+    box-shadow: 0 12px 24px rgba(26, 35, 126, 0.3) !important;
+    cursor: pointer;
+}
+
+/* Efeito ao Clicar (Active) - Feedback tátil */
+.btn-hover-effect:active {
+    transform: translateY(-1px) scale(0.98); /* Dá um leve "afundada" ao clicar */
+    box-shadow: 0 5px 10px rgba(26, 35, 126, 0.2) !important;
+}
