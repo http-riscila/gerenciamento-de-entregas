@@ -142,7 +142,7 @@ export default function Register() {
 
                             <div className="text-center mt-3">
                                 <p className="small text-muted">
-                                    Já possui uma conta? <Link to="/login" className="text-corporate fw-bold text-decoration-none hover-underline">Entrar agora</Link>
+                                    Já possui uma conta? <Link to="/entrar" className="text-corporate fw-bold text-decoration-none hover-underline">Entrar agora</Link>
                                 </p>
                             </div>
                         </form>

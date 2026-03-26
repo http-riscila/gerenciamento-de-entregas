@@ -12,7 +12,7 @@ export default function Navbar({ isLandingPage }) {
                     alt="Logo"
                     className="me-2" 
                     />
-                    <span>Gerenciamento de Entregas</span>
+                    <span>RotaExpress</span>
                 </Link>
 
                 <div className="d-flex align-items-center">
