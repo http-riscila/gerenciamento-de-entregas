@@ -26,6 +26,7 @@ model Recipient {
 
 model Address {
   id           Int       @id @default(autoincrement())
+  description  String    @db.VarChar(50)
   recipient_id Int
   street       String    @db.VarChar(200)
   number       String    @db.VarChar(20)
@@ -75,12 +76,13 @@ enum Status {
   IN_TRANSIT
   OUT_FOR_DELIVERY
   DELIVERED
+  RETURNED
 }
 
 model DeliveryLog {
   id          Int      @id @default(autoincrement())
   delivery_id Int
-  status_novo String
+  status_novo Status
   user_id     Int
   modified_at DateTime @default(now())
   note        String?  @db.Text
