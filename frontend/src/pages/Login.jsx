@@ -1,7 +1,38 @@
 import { Link, useNavigate } from "react-router-dom"
+import { useState } from "react";
+import api from "../api";
 
 export default function Login(){
+    const [credentials, setCredentials] = useState({
+        email: '',
+        password: '',
+    });
+
     const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setCredentials({ ...credentials, [name]: value });
+    };
+
+    async function handleLogin(e){
+        e.preventDefault();
+
+        try{
+            console.log(credentials);
+            const response = await api.post("/login", credentials);
+
+            if (response.status === 200) {
+                console.log("Login realizado com sucesso!");
+
+                navigate('/home'); 
+            }
+
+        } catch (error){
+            console.error("Erro ao entrar:", error);
+        }
+    }
+
     return(
         <div className="min-vh-100 d-flex flex-column bg-light">
             <main className="container flex-grow-1 d-flex align-items-center justify-content-center py-5">
@@ -12,7 +43,7 @@ export default function Login(){
                             <p className="text-muted small">Acesse sua conta para gerenciar entregas</p>
                         </div>
 
-                        <form /*onSubmit={handleLogin}*/>
+                        <form onSubmit={handleLogin}>
                             <div className="mb-3">
                                 <label className="form-label fw-semibold text-secondary">E-mail</label>
                                 <div className="input-group">
@@ -20,11 +51,12 @@ export default function Login(){
                                         <i className="bi bi-envelope text-muted"></i>
                                     </span>
                                     <input 
+                                        name="email"
                                         type="email" 
                                         className="form-control border-start-0 ps-0" 
-                                        //required 
-                                        //value={email}
-                                        //onChange={(e) => setEmail(e.target.value)}
+                                        required 
+                                        value={credentials.email}
+                                        onChange={handleChange}
                                     />
                                 </div>
                             </div>
@@ -36,16 +68,17 @@ export default function Login(){
                                         <i className="bi bi-lock text-muted"></i>
                                     </span>
                                     <input 
+                                        name="password"
                                         type="password" 
                                         className="form-control border-start-0 ps-0" 
-                                        //required 
-                                        //value={password}
-                                        //onChange={(e) => setPassword(e.target.value)}
+                                        required 
+                                        value={credentials.password}
+                                        onChange={handleChange}
                                     />
                                 </div>
                             </div>
 
-                            <button type="submit" onClick={() => navigate('/home')} className="btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3">
+                            <button type="submit" className="btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3">
                                 Entrar no Sistema
                             </button>
 

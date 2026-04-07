@@ -18,7 +18,7 @@ export default function Register() {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleRegister = async (e) => {
+    async function handleRegister(e) {
         e.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
@@ -27,13 +27,14 @@ export default function Register() {
         }
 
         try {
-            await api.post("/users", {
+            console.log(formData);
+            await api.post("/register", {
                 name: formData.name,
                 email: formData.email,
                 role: formData.role,
                 password: formData.password
             });
-                navigate("/home");
+                navigate("/entrar");
                 console.log("deu certo!");
 
             } catch (error) {

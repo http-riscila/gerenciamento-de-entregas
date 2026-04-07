@@ -6,7 +6,7 @@ export default function Navbar({ isLandingPage }) {
     return (
         <nav className="navbar navbar-expand-lg bg-corporate bg-body-tertiary px-4 ">
             <div className="container-fluid d-flex justify-content-between align-items-center text-white">
-                <Link to={'/'} className="navbar-brand fw-bold text-white d-flex align-items-center">
+                <Link to={isLandingPage ? '/' : '/home'} className="navbar-brand fw-bold text-white d-flex align-items-center">
                     <img 
                     src={Logo} 
                     alt="Logo"
@@ -30,7 +30,7 @@ export default function Navbar({ isLandingPage }) {
                                 <ul className="dropdown-menu dropdown-menu-end shadow">
                                     <li><a className="dropdown-item" href="#">Meu Perfil</a></li>
                                     <li><hr className="dropdown-divider" /></li>
-                                    <li><a className="dropdown-item text-danger" href="#">Sair</a></li>
+                                    <Link to={'/'} className="dropdown-item text-danger" href="#">Sair</Link>
                                 </ul>
                             </li>
                         </ul>

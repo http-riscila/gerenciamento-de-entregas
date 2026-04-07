@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import userRoutes from './routes/user-route.js';
+import authRoutes from './routes/auth-route.js';
 
 const app = express();
 
@@ -9,6 +9,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use(userRoutes);
+app.use(authRoutes);
 
 export default app;
