@@ -10,6 +10,7 @@ export default function Register() {
         password: '',
         confirmPassword: ''
     });
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -27,6 +28,7 @@ export default function Register() {
         }
 
         try {
+            setLoading(true);
             console.log(formData);
             await api.post("/register", {
                 name: formData.name,
@@ -39,6 +41,8 @@ export default function Register() {
 
             } catch (error) {
             console.error("Erro ao cadastrar:", error);
+        } finally {
+            setLoading(true);
         }
     };
 
@@ -137,7 +141,9 @@ export default function Register() {
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3">
+                            <button type="submit" 
+                                    className={`btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3 ${loading} ? 'opacity-80' : ''}`}
+                                    disabled={loading}>
                                 Finalizar Cadastro
                             </button>
 

@@ -7,6 +7,7 @@ export default function Login(){
         email: '',
         password: '',
     });
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -19,6 +20,7 @@ export default function Login(){
         e.preventDefault();
 
         try{
+            setLoading(true);
             console.log(credentials);
             const response = await api.post("/login", credentials);
 
@@ -30,6 +32,8 @@ export default function Login(){
 
         } catch (error){
             console.error("Erro ao entrar:", error);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -78,7 +82,9 @@ export default function Login(){
                                 </div>
                             </div>
 
-                            <button type="submit" className="btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3">
+                            <button type="submit" 
+                                    className={`btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3 ${loading} ? 'opacity-80' : ''}`}
+                                    disabled={loading}>
                                 Entrar no Sistema
                             </button>
 
