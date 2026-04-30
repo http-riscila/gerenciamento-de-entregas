@@ -1,5 +1,6 @@
 import prisma from '../config/prisma.js';
 import bcrypt from 'bcrypt';
+import userService from './user-service.js';
 
   async function register(userData) {
 
@@ -17,7 +18,7 @@ import bcrypt from 'bcrypt';
   }
 
   async function login (credentials){
-    const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+    const user = await userService.getByEmail(email);
     if (!user) throw new Error('Credenciais inválidas');
 
     const isMatch = await bcrypt.compare(credentials.password, user.password);
