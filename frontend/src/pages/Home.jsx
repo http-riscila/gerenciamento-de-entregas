@@ -4,15 +4,7 @@ import Footer from "../components/Footer";
 
 export default function Home(){
     const actions = [
-        { name: "Nova Entrega", icon: "bi-plus-circle-dotted" },
-        { name: "Listagem", icon: "bi-list-ul" },
-        { name: "Usuários", icon: "bi-people" },
-        { name: "Relatórios", icon: "bi-file-earmark-bar-graph" },
-        { name: "Configurações", icon: "bi-gear" },
-        { name: "Suporte", icon: "bi-headset" },
-        { name: "Relatórios", icon: "bi-file-earmark-bar-graph" },
-        { name: "Configurações", icon: "bi-gear" },
-        { name: "Suporte", icon: "bi-headset" }
+        { name: "Usuários", icon: "bi-people", path: "/usuários" },
     ];
 
     return(
@@ -28,7 +20,7 @@ export default function Home(){
                 <div className="row row-cols-1 row-cols-md-3 g-4 justify-content-center w-100">
                     {actions.map((action, index) => (
                         <div key={index} className="col d-flex justify-content-center">
-                            <ActionCards title={action.name} icon={action.icon} />
+                            <ActionCards title={action.name} icon={action.icon} path={action.path} />
                         </div>
                     ))}
                 </div>

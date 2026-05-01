@@ -3,6 +3,7 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
+import Users from './pages/Users';
 import './App.css';
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/entrar" element={<Login />} />
         <Route path="/cadastro" element={<Register />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/usuários" element={<Users />} />
       </Routes>
     </Router>
   )

@@ -78,7 +78,26 @@
   color: var(--footer-text) !important;
 }
 
-/* Estado Base do Botão de Acesso */
+.btn-corporate {
+    background-color: var(--primary-color) !important;
+    color: var(--text-white) !important;
+    border: none;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-corporate:hover {
+    background-color: #0d145a !important;
+    color: #ffffff !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(26, 35, 126, 0.3) !important;
+    cursor: pointer;
+}
+
+.btn-corporate:active {
+    transform: translateY(0);
+    filter: brightness(90%);
+}
+
 .btn-hover-effect {
     background-color: var(--primary-color);
     color: white;
