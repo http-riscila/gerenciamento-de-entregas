@@ -15,7 +15,7 @@ import AuthService from '../services/auth-service.js';
   async function login(req, res) {
     try {
         const credentials = req.body;
-
+        console.log(credentials);
         const user = await AuthService.login(credentials);
         const { password: _, ...userWithoutPassword } = user;
         return res.status(200).json({
@@ -24,7 +24,7 @@ import AuthService from '../services/auth-service.js';
         });
 
     } catch (error) {
-        return res.status(500).json({ error: 'Erro ao criar usuário', details: error.message });
+        return res.status(500).json({ error: 'Erro ao autenticar usuário', details: error.message });
     }
   }
 

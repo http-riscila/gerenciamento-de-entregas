@@ -18,7 +18,7 @@ import userService from './user-service.js';
   }
 
   async function login (credentials){
-    const user = await userService.getByEmail(email);
+    const user = await userService.getByEmail(credentials.email);
     if (!user) throw new Error('Credenciais inválidas');
 
     const isMatch = await bcrypt.compare(credentials.password, user.password);
