@@ -33,7 +33,7 @@ model Address {
   neighborhood String    @db.VarChar(100)
   city         String    @db.VarChar(100)
   state        String    @db.VarChar(2)
-  recipient    Recipient @relation(fields: [recipient_id], references: [id])
+  recipient    Recipient @relation(fields: [recipient_id], references: [id], onDelete: Cascade)
 
   @@map("tbAddresses")
 }

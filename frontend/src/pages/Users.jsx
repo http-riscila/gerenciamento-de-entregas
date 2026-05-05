@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../api.js";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import UserListTable from '../components/UserTable';
+import ListTable from '../components/ListTable.jsx';
 import ModalWrapper from "../components/ModalWrapper";
 
 export default function Users() {
@@ -97,11 +97,12 @@ export default function Users() {
 
             <main className="container-fluid flex-grow-1 px-4 py-2 mt-4">
                 <div className="mx-auto" style={{ maxWidth: '100%' }}>
-                    <UserListTable 
-                        users={users} 
+                    <ListTable 
+                        data={users} 
                         onCreate={openCreate} 
                         onEdit={openEdit} 
-                        onDelete={(id) => openDelete(users.find(u => u.id === id))} 
+                        onDelete={(id) => openDelete(users.find(u => u.id === id))}
+                        type="usuarios"
                     />
                 </div>
             </main>

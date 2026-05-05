@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 export default function Home(){
     const actions = [
         { name: "Usuários", icon: "bi-people", path: "/usuários" },
+        { name: "Destinatários", icon: "bi-geo-alt", path: "/destinatários" },
     ];
 
     return(
