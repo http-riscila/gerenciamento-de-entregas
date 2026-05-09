@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../api.js";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { recipientSchema } from "../validations/recipientSchema";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -10,62 +13,55 @@ export default function Recipients() {
     const [recipients, setRecipients] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     
-    const initialFormState = { 
-        name: '', 
-        cpf: '', 
-        phone_number: '', 
-        email: '',
-        addresses: {
-            description: '',
-            street: '',
-            number: '',
-            neighborhood: '',
-            city: '',
-            state: ''
-        }
-};
-
     const [modalConfig, setModalConfig] = useState({
         show: false,
         type: 'create',
-        data: initialFormState
+        data: null
+    });
+
+    const { register, handleSubmit, reset, setError, formState: { errors } } = useForm({
+        resolver: zodResolver(recipientSchema)
     });
 
     async function getRecipients() {
+        setIsLoading(true);
         try {
             const response = await api.get("/recipients");
             setRecipients(response.data);
-            console.log(response)
         } catch (error) {
             console.error("Erro ao buscar destinatários:", error);
+        } finally {
+            setIsLoading(false);
         }
     }
 
     useEffect(() => { getRecipients(); }, []);
 
-    const handleCreate = async () => {
-        console.log(modalConfig.data);
-
+    const onSubmit = async (formData) => {
         setIsLoading(true);
         try {
-            await api.post("/recipients", modalConfig.data);
+            // Limpa formatação de CPF e Telefone para enviar apenas números ao banco
+            const payload = {
+                ...formData,
+                cpf: formData.cpf.replace(/\D/g, ""),
+                phone_number: formData.phone_number.replace(/\D/g, "")
+            };
+
+            if (modalConfig.type === 'create') {
+                await api.post("/recipients", payload);
+            } else {
+                await api.patch(`/recipients/${modalConfig.data.id}`, payload);
+            }
             await getRecipients();
             closeModal();
         } catch (error) {
-            console.error("Erro ao criar destinatário:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleEdit = async () => {
-        setIsLoading(true);
-        try {
-            await api.patch(`/recipients/${modalConfig.data.id}`, modalConfig.data);
-            await getRecipients();
-            closeModal();
-        } catch (error) {
-            console.error("Erro ao editar destinatário:", error);
+            const backendError = error.response?.data?.error;
+            if (backendError?.includes("E-mail")) {
+                setError("email", { type: "manual", message: "E-mail já cadastrado" });
+            }
+            if (backendError?.includes("CPF")) {
+                setError("cpf", { type: "manual", message: "CPF já cadastrado" });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -78,137 +74,112 @@ export default function Recipients() {
             await getRecipients();
             closeModal();
         } catch (error) {
-            console.error("Erro ao deletar destinatário:", error);
+            console.error("Erro ao deletar:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const openCreate = () => setModalConfig({ 
-        show: true, type: 'create', data: initialFormState 
-    });
+    const openCreate = () => {
+        reset({ 
+            name: '', cpf: '', email: '', phone_number: '',
+            addresses: { description: '', street: '', number: '', neighborhood: '', city: '', state: '' } 
+        });
+        setModalConfig({ show: true, type: 'create', data: null });
+    };
 
     const openEdit = (recipient) => {
-    setModalConfig({ 
-        show: true, 
-        type: 'edit', 
-        data: { 
-            ...recipient, 
-            addresses: recipient.addresses?.[0] || initialFormState.addresses 
-        } 
-    });
-};
+        // Mapeia o endereço vindo da API para o formato do formulário
+        const addressData = recipient.addresses?.[0] || {};
+        reset({ ...recipient, addresses: addressData });
+        setModalConfig({ show: true, type: 'edit', data: recipient });
+    };
 
-    const openDelete = (recipient) => setModalConfig({ 
-        show: true, type: 'delete', data: recipient 
-    });
-
-    const closeModal = () => setModalConfig({ ...modalConfig, show: false });
+    const closeModal = () => {
+        setModalConfig({ ...modalConfig, show: false });
+        reset();
+    };
 
     return (
         <>
             <Navbar isLandingPage={false} />
 
-            <main className="container-fluid flex-grow-1 px-4 py-2 mt-4">
-                <div className="mx-auto" style={{ maxWidth: '100%' }}>
-                    <ListTable 
-                        data={recipients} 
-                        onCreate={openCreate} 
-                        onEdit={openEdit} 
-                        onDelete={(id) => openDelete(recipients.find(r => r.id === id))}
-                        type="destinatarios"
-                    />
-                </div>
+            <main className="container-fluid px-4 py-2 mt-4">
+                <ListTable 
+                    data={recipients} 
+                    onCreate={openCreate} 
+                    onEdit={openEdit} 
+                    onDelete={(id) => setModalConfig({ show: true, type: 'delete', data: recipients.find(r => r.id === id) })}
+                    type="destinatarios"
+                    isLoading={isLoading}
+                />
             </main>
 
             {(modalConfig.type === 'create' || modalConfig.type === 'edit') && (
                 <ModalWrapper
                     show={modalConfig.show}
                     onClose={closeModal}
-                    onSuccess={modalConfig.type === 'create' ? handleCreate : handleEdit}
+                    onSuccess={handleSubmit(onSubmit)} 
                     title={modalConfig.type === 'create' ? "Novo Destinatário" : "Editar Destinatário"}
                     successLabel="Salvar"
                     isLoading={isLoading}
                 >
-                    <div className="row g-3">
+                    <form className="row g-3">
                         <div className="col-md-8">
                             <label className="form-label fw-bold small">Nome Completo</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.name}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, name: e.target.value}})}
-                                placeholder="Ex: Maria Oliveira"
-                            />
+                            <input {...register("name")} className={`form-control ${errors.name ? 'is-invalid' : ''}`} />
+                            {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
                         </div>
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">CPF</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.cpf}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, cpf: e.target.value}})}
-                                placeholder="000.000.000-00"
-                            />
+                            <input {...register("cpf")} placeholder="Apenas números" className={`form-control ${errors.cpf ? 'is-invalid' : ''}`} />
+                            {errors.cpf && <div className="invalid-feedback">{errors.cpf.message}</div>}
                         </div>
                         <div className="col-md-6">
                             <label className="form-label fw-bold small">E-mail</label>
-                            <input type="email" className="form-control shadow-none" 
-                                value={modalConfig.data.email}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, email: e.target.value}})}
-                            />
+                            <input {...register("email")} className={`form-control ${errors.email ? 'is-invalid' : ''}`} />
+                            {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
                         </div>
                         <div className="col-md-6">
                             <label className="form-label fw-bold small">Telefone</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.phone_number}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, phone_number: e.target.value}})}
-                                placeholder="(85) 90000-0000"
-                            />
+                            <input {...register("phone_number")} className={`form-control ${errors.phone_number ? 'is-invalid' : ''}`} />
+                            {errors.phone_number && <div className="invalid-feedback">{errors.phone_number.message}</div>}
                         </div>
 
-                        <hr className="my-4 text-muted" />
+                        <hr className="my-3 text-muted" />
                         <h6 className="fw-bold mb-0">Endereço de Entrega</h6>
 
                         <div className="col-12">
-                            <label className="form-label fw-bold small">Nome</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.addresses?.description}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, description: e.target.value}}})}
-                            />
+                            <label className="form-label fw-bold small">Descrição (Ex: Casa, Trabalho)</label>
+                            <input {...register("addresses.description")} className={`form-control ${errors.addresses?.description ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.description && <div className="invalid-feedback">{errors.addresses.description.message}</div>}
                         </div>
                         <div className="col-12">
                             <label className="form-label fw-bold small">Rua/Avenida</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.addresses?.street}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, street: e.target.value}}})}
-                            />
+                            <input {...register("addresses.street")} className={`form-control ${errors.addresses?.street ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.street && <div className="invalid-feedback">{errors.addresses.street.message}</div>}
                         </div>
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">Número</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.addresses?.number}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, number: e.target.value}}})}
-                            />
+                            <input {...register("addresses.number")} className={`form-control ${errors.addresses?.number ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.number && <div className="invalid-feedback">{errors.addresses.number.message}</div>}
                         </div>
                         <div className="col-md-8">
                             <label className="form-label fw-bold small">Bairro</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.addresses?.neighborhood}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, neighborhood: e.target.value}}})}
-                            />
+                            <input {...register("addresses.neighborhood")} className={`form-control ${errors.addresses?.neighborhood ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.neighborhood && <div className="invalid-feedback">{errors.addresses.neighborhood.message}</div>}
                         </div>
                         <div className="col-md-8">
                             <label className="form-label fw-bold small">Cidade</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.addresses?.city}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, city: e.target.value}}})}
-                            />
+                            <input {...register("addresses.city")} className={`form-control ${errors.addresses?.city ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.city && <div className="invalid-feedback">{errors.addresses.city.message}</div>}
                         </div>
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">UF</label>
-                            <input type="text" className="form-control shadow-none" maxLength="2"
-                                value={modalConfig.data.addresses?.state}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, addresses: {...modalConfig.data.addresses, state: e.target.value.toUpperCase()}}})}
-                            />
+                            <input {...register("addresses.state")} maxLength="2" className={`form-control ${errors.addresses?.state ? 'is-invalid' : ''}`} />
+                            {errors.addresses?.state && <div className="invalid-feedback">{errors.addresses.state.message}</div>}
                         </div>
-                    </div>
+                    </form>
                 </ModalWrapper>
             )}
 
@@ -223,8 +194,8 @@ export default function Recipients() {
                 >
                     <div className="text-center p-3">
                         <i className="bi bi-geo-alt-fill text-danger fs-1 mb-3"></i>
-                        <p className="fs-5">Remover o destinatário <strong>{modalConfig.data.name}</strong>?</p>
-                        <p className="text-muted">Isso pode afetar históricos de entregas vinculados.</p>
+                        <p className="fs-5">Remover o destinatário <strong>{modalConfig.data?.name}</strong>?</p>
+                        <p className="text-muted small">Esta ação não pode ser desfeita.</p>
                     </div>
                 </ModalWrapper>
             )}

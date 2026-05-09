@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import api from "../api.js";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { userSchema } from "../validations/userSchema";
+
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import ListTable from '../components/ListTable.jsx';
@@ -9,56 +13,47 @@ export default function Users() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     
-    const initialFormState = { name: '', email: '', role: 'LOGISTICS', password: '' };
-
     const [modalConfig, setModalConfig] = useState({
         show: false,
         type: 'create',
-        data: initialFormState
+        data: null
+    });
+
+    const { register, handleSubmit, reset, setError, formState: { errors } } = useForm({
+        resolver: zodResolver(userSchema)
     });
 
     async function getUsers() {
+        setIsLoading(true);
         try {
             const response = await api.get("/users");
             setUsers(response.data);
         } catch (error) {
             console.error("Erro ao buscar usuários:", error);
+        } finally {
+            setIsLoading(false);
         }
     }
 
     useEffect(() => { getUsers(); }, []);
 
-    const handleCreate = async () => {
-        if (!modalConfig.data.name || !modalConfig.data.email || !modalConfig.data.password) {
-            return alert("Por favor, preencha todos os campos obrigatórios.");
-        }
-
+    const onSubmit = async (formData) => {
         setIsLoading(true);
         try {
-            await api.post("/register", modalConfig.data);
+            if (modalConfig.type === 'create') {
+                await api.post("/register", formData);
+            } else {
+                const { password, confirmPassword, ...updateData } = formData;
+                
+                await api.patch(`/users/${modalConfig.data.id}`, updateData);
+            }
             await getUsers();
             closeModal();
         } catch (error) {
-            console.error("Erro ao criar:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleEdit = async () => {
-        setIsLoading(true);
-        try {
-            const updateData = {
-                name: modalConfig.data.name,
-                email: modalConfig.data.email,
-                role: modalConfig.data.role
-            };
-            
-            await api.patch(`/users/${modalConfig.data.id}`, updateData);
-            await getUsers();
-            closeModal();
-        } catch (error) {
-            console.error("Erro ao editar:", error);
+            const backendError = error.response?.data?.error;
+            if (backendError?.includes("E-mail")) {
+                setError("email", { type: "manual", message: "E-mail já cadastrado" });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -77,84 +72,110 @@ export default function Users() {
         }
     };
 
-    const openCreate = () => setModalConfig({ 
-        show: true, type: 'create', data: initialFormState 
-    });
+    const openCreate = () => {
+        reset({ name: '', email: '', role: 'LOGISTICS', password: '' });
+        setModalConfig({ show: true, type: 'create', data: null });
+    };
 
-    const openEdit = (user) => setModalConfig({ 
-        show: true, type: 'edit', data: { ...user } 
-    });
+    const openEdit = (user) => {
+        reset({ 
+            ...user, 
+            password: 'password_mock', 
+            confirmPassword: 'password_mock' 
+        });
+        setModalConfig({ show: true, type: 'edit', data: user });
+    };
 
-    const openDelete = (user) => setModalConfig({ 
-        show: true, type: 'delete', data: user 
-    });
+    const openDelete = (user) => setModalConfig({ show: true, type: 'delete', data: user });
 
-    const closeModal = () => setModalConfig({ ...modalConfig, show: false });
+    const closeModal = () => {
+        setModalConfig({ ...modalConfig, show: false });
+        reset();
+    };
 
     return (
         <>
             <Navbar isLandingPage={false} />
 
             <main className="container-fluid flex-grow-1 px-4 py-2 mt-4">
-                <div className="mx-auto" style={{ maxWidth: '100%' }}>
-                    <ListTable 
-                        data={users} 
-                        onCreate={openCreate} 
-                        onEdit={openEdit} 
-                        onDelete={(id) => openDelete(users.find(u => u.id === id))}
-                        type="usuarios"
-                    />
-                </div>
+                <ListTable 
+                    data={users} 
+                    onCreate={openCreate} 
+                    onEdit={openEdit} 
+                    onDelete={(id) => openDelete(users.find(u => u.id === id))}
+                    type="usuarios"
+                    isLoading={isLoading}
+                />
             </main>
 
             {(modalConfig.type === 'create' || modalConfig.type === 'edit') && (
                 <ModalWrapper
                     show={modalConfig.show}
                     onClose={closeModal}
-                    onSuccess={modalConfig.type === 'create' ? handleCreate : handleEdit}
+                    onSuccess={handleSubmit(onSubmit)} 
                     title={modalConfig.type === 'create' ? "Novo Usuário" : "Editar Usuário"}
                     successLabel={modalConfig.type === 'create' ? "Cadastrar" : "Salvar Alterações"}
                     isLoading={isLoading}
                 >
-                    <div className="row g-3">
+                    <form className="row g-3">
                         <div className="col-12">
                             <label className="form-label fw-bold">Nome</label>
-                            <input type="text" className="form-control shadow-none" 
-                                value={modalConfig.data.name}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, name: e.target.value}})}
+                            <input 
+                                {...register("name")}
+                                type="text" 
+                                className={`form-control ${errors.name ? 'is-invalid' : ''}`}
                                 placeholder="Digite o nome completo"
                             />
+                            {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
                         </div>
+
                         <div className="col-12">
                             <label className="form-label fw-bold">E-mail</label>
-                            <input type="email" className="form-control shadow-none" 
-                                value={modalConfig.data.email}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, email: e.target.value}})}
+                            <input 
+                                {...register("email")}
+                                type="email" 
+                                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                                 placeholder="exemplo@rota.com"
                             />
+                            {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
                         </div>
-                        <div className="col-md-6">
+
+                        <div className="col-12">
                             <label className="form-label fw-bold">Perfil</label>
-                            <select className="form-select shadow-none" 
-                                value={modalConfig.data.role}
-                                onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, role: e.target.value}})}
+                            <select 
+                                {...register("role")}
+                                className={`form-select ${errors.role ? 'is-invalid' : ''}`}
                             >
                                 <option value="ADMIN">ADMIN</option>
                                 <option value="LOGISTICS">LOGISTICS</option>
                                 <option value="DRIVER">DRIVER</option>
                             </select>
+                            {errors.role && <div className="invalid-feedback">{errors.role.message}</div>}
                         </div>
+
                         {modalConfig.type === 'create' && (
-                            <div className="col-md-6">
-                                <label className="form-label fw-bold">Senha</label>
-                                <input type="password" className="form-control shadow-none" 
-                                    value={modalConfig.data.password}
-                                    onChange={(e) => setModalConfig({...modalConfig, data: {...modalConfig.data, password: e.target.value}})}
-                                    placeholder="Crie uma senha"
-                                />
-                            </div>
+                            <>
+                                <div className="col-md-6">
+                                    <label className="form-label fw-bold">Senha</label>
+                                    <input 
+                                        {...register("password")}
+                                        type="password" 
+                                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                    />
+                                    {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
+                                </div>
+                                <div className="col-md-6">
+                                    <label className="form-label fw-bold">Confirmar Senha</label>
+                                    <input 
+                                        {...register("confirmPassword")}
+                                        type="password" 
+                                        className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                                    />
+                                    {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword.message}</div>}
+                                </div>
+                            </>
                         )}
-                    </div>
+                    </form>
                 </ModalWrapper>
             )}
 
@@ -169,8 +190,7 @@ export default function Users() {
                 >
                     <div className="text-center p-3">
                         <i className="bi bi-exclamation-triangle text-danger fs-1 mb-3"></i>
-                        <p className="fs-5">Deseja mesmo excluir <strong>{modalConfig.data.name}</strong>?</p>
-                        <p className="text-muted">Os dados serão removidos permanentemente do sistema.</p>
+                        <p className="fs-5">Deseja mesmo excluir <strong>{modalConfig.data?.name}</strong>?</p>
                     </div>
                 </ModalWrapper>
             )}

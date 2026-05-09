@@ -1,48 +1,43 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api.js";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { userSchema } from "../validations/userSchema";
 
 export default function Register() {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        role: '',
-        password: '',
-        confirmPassword: ''
-    });
     const [loading, setLoading] = useState(false);
-
     const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
+    const { 
+        register, 
+        handleSubmit, 
+        setError, 
+        formState: { errors } 
+    } = useForm({
+        resolver: zodResolver(userSchema)
+    });
 
-    async function handleRegister(e) {
-        e.preventDefault();
-
-        if (formData.password !== formData.confirmPassword) {
-            console.log("As senhas não coincidem!");
-            return;
-        }
-
+    const onSubmit = async (data) => {
         try {
             setLoading(true);
-            console.log(formData);
-            await api.post("/register", {
-                name: formData.name,
-                email: formData.email,
-                role: formData.role,
-                password: formData.password
-            });
-                navigate("/entrar");
-                console.log("deu certo!");
+            await api.post("/register", data);
+            navigate("/entrar");
+        } catch (error) {
+            const errorMessage = error.response?.data?.error;
 
-            } catch (error) {
-            console.error("Erro ao cadastrar:", error);
+            if (error.response?.status === 400 && errorMessage === "E-mail já em uso!") {
+                
+                setError("email", { 
+                    type: "manual", 
+                    message: errorMessage 
+                });
+                
+            } else {
+                console.error("Erro ao cadastrar:", error);
+            }
         } finally {
-            setLoading(true);
+            setLoading(false);
         }
     };
 
@@ -53,7 +48,7 @@ export default function Register() {
                     <div className="card-body">
                         <h2 className="text-center mb-4 fw-bold text-corporate">Criar Conta</h2>
 
-                        <form onSubmit={handleRegister}>
+                        <form onSubmit={handleSubmit(onSubmit)}>
                             <div className="mb-3">
                                 <label className="form-label fw-semibold text-secondary">Nome Completo</label>
                                 <div className="input-group">
@@ -61,12 +56,11 @@ export default function Register() {
                                         <i className="bi bi-person text-muted"></i>
                                     </span>
                                     <input 
-                                        name="name"
+                                        {...register("name")}
                                         type="text" 
-                                        className="form-control border-start-0 ps-0" 
-                                        required 
-                                        onChange={handleChange}
+                                        className={`form-control border-start-0 ps-0 ${errors.name ? 'is-invalid' : ''}`}
                                     />
+                                    {errors.name && <div className="invalid-feedback fw-bold">{errors.name.message}</div>}
                                 </div>
                             </div>
 
@@ -77,12 +71,11 @@ export default function Register() {
                                         <i className="bi bi-envelope text-muted"></i>
                                     </span>
                                     <input 
-                                        name="email"
+                                        {...register("email")}
                                         type="email" 
-                                        className="form-control border-start-0 ps-0" 
-                                        required 
-                                        onChange={handleChange}
+                                        className={`form-control border-start-0 ps-0 ${errors.email ? 'is-invalid' : ''}`}
                                     />
+                                    {errors.email && <div className="invalid-feedback fw-bold">{errors.email.message}</div>}
                                 </div>
                             </div>
 
@@ -93,21 +86,18 @@ export default function Register() {
                                         <i className="bi bi-shield-lock text-muted"></i>
                                     </span>
                                     <select 
-                                        name="role"
-                                        className="form-select border-start-0 ps-0 text-secondary" 
-                                        required
-                                        value={formData.role}
-                                        onChange={handleChange}
+                                        {...register("role")}
+                                        className={`form-select border-start-0 ps-0 text-secondary ${errors.role ? 'is-invalid' : ''}`}
                                     >
-                                        <option value="" disabled>Selecione seu cargo...</option>
-                                        <option value="ADMIN">Administrador</option>
+                                        <option value="">Selecione seu cargo...</option>
                                         <option value="LOGISTICS">Operador de Logística</option>
                                         <option value="DRIVER">Motorista</option>
                                     </select>
+                                    {errors.role && <div className="invalid-feedback fw-bold">{errors.role.message}</div>}
                                 </div>
                             </div>
 
-                            <div className="d-flex align-items-center gap-3">
+                            <div className="d-flex align-items-start gap-3">
                                 <div className="mb-3 w-100">
                                     <label className="form-label fw-semibold text-secondary">Senha</label>
                                     <div className="input-group">
@@ -115,12 +105,11 @@ export default function Register() {
                                             <i className="bi bi-lock text-muted"></i>
                                         </span>
                                         <input 
-                                            name="password"
+                                            {...register("password")}
                                             type="password" 
-                                            className="form-control border-start-0 ps-0" 
-                                            required 
-                                            onChange={handleChange}
+                                            className={`form-control border-start-0 ps-0 ${errors.password ? 'is-invalid' : ''}`}
                                         />
+                                        {errors.password && <div className="invalid-feedback fw-bold">{errors.password.message}</div>}
                                     </div>
                                 </div>
 
@@ -131,25 +120,24 @@ export default function Register() {
                                             <i className="bi bi-shield-check text-muted"></i>
                                         </span>
                                         <input 
-                                            name="confirmPassword"
+                                            {...register("confirmPassword")}
                                             type="password" 
-                                            className="form-control border-start-0 ps-0" 
-                                            required 
-                                            onChange={handleChange}
+                                            className={`form-control border-start-0 ps-0 ${errors.confirmPassword ? 'is-invalid' : ''}`}
                                         />
+                                        {errors.confirmPassword && <div className="invalid-feedback fw-bold">{errors.confirmPassword.message}</div>}
                                     </div>
                                 </div>
                             </div>
 
                             <button type="submit" 
-                                    className={`btn btn-corporate w-100 py-2 fw-bold btn-hover-effect rounded-pill mb-3 ${loading} ? 'opacity-80' : ''}`}
+                                    className='btn btn-corporate w-100 py-2 fw-bold rounded-pill mb-3'
                                     disabled={loading}>
-                                Finalizar Cadastro
+                                {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : 'Finalizar Cadastro'}
                             </button>
 
                             <div className="text-center mt-3">
                                 <p className="small text-muted">
-                                    Já possui uma conta? <Link to="/entrar" className="text-corporate fw-bold text-decoration-none hover-underline">Entrar agora</Link>
+                                    Já possui uma conta? <Link to="/entrar" className="text-corporate fw-bold text-decoration-none">Entrar agora</Link>
                                 </p>
                             </div>
                         </form>

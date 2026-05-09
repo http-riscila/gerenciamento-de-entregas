@@ -62,7 +62,8 @@ model Delivery {
   recipient_id Int
   driver_id    Int?
   status       Status        @default(REQUESTED)
-  modified_at  DateTime      @updatedAt
+  modified_at  DateTime?      @updatedAt
+
   recipient    Recipient     @relation(fields: [recipient_id], references: [id])
   driver       User?         @relation("DriverDeliveries", fields: [driver_id], references: [id])
   logs         DeliveryLog[]
@@ -77,6 +78,7 @@ enum Status {
   OUT_FOR_DELIVERY
   DELIVERED
   RETURNED
+  CANCELLED
 }
 
 model DeliveryLog {
