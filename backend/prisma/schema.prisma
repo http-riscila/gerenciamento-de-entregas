@@ -44,6 +44,7 @@ model User {
   email        String        @unique @db.VarChar(100)
   password     String        @db.VarChar(255)
   role         Role
+  isActive     Boolean  @default(true)
   deliveries   Delivery[]    @relation("DriverDeliveries")
   modifiedLogs DeliveryLog[]
 

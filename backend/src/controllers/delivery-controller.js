@@ -13,8 +13,10 @@ async function create(req, res) {
 async function updateStatus(req, res) {
   try {
     const { id } = req.params;
-    const { userId } = req.user.id;
+    const userId = req.user.id;
     const { status, note, driver_id } = req.body;
+
+    console.log("id do usuario:", userId);
     
     const updated = await DeliveryService.updateStatus(id, userId, { status, note, driver_id });
     return res.status(200).json(updated);

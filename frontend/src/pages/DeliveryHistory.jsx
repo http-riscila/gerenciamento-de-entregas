@@ -46,7 +46,6 @@ export default function DeliveryHistory() {
             const payload = {
                 status: data.newStatus,
                 note: data.note,
-                user_id: user?.id 
             };
 
             const response = await api.patch(`/deliveries/${id}/status`, payload);

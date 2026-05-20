@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import api from "../api.js";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +12,7 @@ import ModalWrapper from "../components/ModalWrapper";
 
 export default function Recipients() {
     const [recipients, setRecipients] = useState([]);
+    const [ufList, setUfList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     
     const [modalConfig, setModalConfig] = useState({
@@ -22,6 +24,23 @@ export default function Recipients() {
     const { register, handleSubmit, reset, setError, formState: { errors } } = useForm({
         resolver: zodResolver(recipientSchema)
     });
+
+    const maskCPF = (value) => {
+        return value
+            .replace(/\D/g, "")
+            .replace(/(\d{3})(\d)/, "$1.$2")
+            .replace(/(\d{3})(\d)/, "$1.$2")
+            .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+            .slice(0, 14);
+    };
+
+    const maskPhone = (value) => {
+        return value
+            .replace(/\D/g, "")
+            .replace(/(\d{2})(\d)/, "($1) $2")
+            .replace(/(\d{5})(\d)/, "$1-$2")
+            .slice(0, 15);
+    };
 
     async function getRecipients() {
         setIsLoading(true);
@@ -35,12 +54,20 @@ export default function Recipients() {
         }
     }
 
-    useEffect(() => { getRecipients(); }, []);
+    async function loadStates() {
+        try {
+            const response = await axios.get("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome");
+            setUfList(response.data);
+        } catch (error) {
+            console.error("Erro ao buscar UFs do IBGE:", error);
+        }
+    }
+
+    useEffect(() => { getRecipients(); loadStates();}, []);
 
     const onSubmit = async (formData) => {
         setIsLoading(true);
         try {
-            // Limpa formatação de CPF e Telefone para enviar apenas números ao banco
             const payload = {
                 ...formData,
                 cpf: formData.cpf.replace(/\D/g, ""),
@@ -89,7 +116,6 @@ export default function Recipients() {
     };
 
     const openEdit = (recipient) => {
-        // Mapeia o endereço vindo da API para o formato do formulário
         const addressData = recipient.addresses?.[0] || {};
         reset({ ...recipient, addresses: addressData });
         setModalConfig({ show: true, type: 'edit', data: recipient });
@@ -130,19 +156,36 @@ export default function Recipients() {
                             <input {...register("name")} className={`form-control ${errors.name ? 'is-invalid' : ''}`} />
                             {errors.name && <div className="invalid-feedback">{errors.name.message}</div>}
                         </div>
+
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">CPF</label>
-                            <input {...register("cpf")} placeholder="Apenas números" className={`form-control ${errors.cpf ? 'is-invalid' : ''}`} />
+                            <input 
+                                {...register("cpf", {
+                                    onChange: (e) => { e.target.value = maskCPF(e.target.value); }
+                                })} 
+                                type="text"
+                                placeholder="000.000.000-00" 
+                                className={`form-control ${errors.cpf ? 'is-invalid' : ''}`} 
+                            />
                             {errors.cpf && <div className="invalid-feedback">{errors.cpf.message}</div>}
                         </div>
+
                         <div className="col-md-6">
                             <label className="form-label fw-bold small">E-mail</label>
                             <input {...register("email")} className={`form-control ${errors.email ? 'is-invalid' : ''}`} />
                             {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
                         </div>
+
                         <div className="col-md-6">
                             <label className="form-label fw-bold small">Telefone</label>
-                            <input {...register("phone_number")} className={`form-control ${errors.phone_number ? 'is-invalid' : ''}`} />
+                            <input 
+                                {...register("phone_number", {
+                                    onChange: (e) => { e.target.value = maskPhone(e.target.value); }
+                                })} 
+                                type="text"
+                                placeholder="(00) 00000-0000"
+                                className={`form-control ${errors.phone_number ? 'is-invalid' : ''}`} 
+                            />
                             {errors.phone_number && <div className="invalid-feedback">{errors.phone_number.message}</div>}
                         </div>
 
@@ -159,11 +202,17 @@ export default function Recipients() {
                             <input {...register("addresses.street")} className={`form-control ${errors.addresses?.street ? 'is-invalid' : ''}`} />
                             {errors.addresses?.street && <div className="invalid-feedback">{errors.addresses.street.message}</div>}
                         </div>
+
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">Número</label>
-                            <input {...register("addresses.number")} className={`form-control ${errors.addresses?.number ? 'is-invalid' : ''}`} />
+                            <input 
+                                {...register("addresses.number")} 
+                                type="number" 
+                                className={`form-control no-spinners ${errors.addresses?.number ? 'is-invalid' : ''}`} 
+                            />
                             {errors.addresses?.number && <div className="invalid-feedback">{errors.addresses.number.message}</div>}
                         </div>
+
                         <div className="col-md-8">
                             <label className="form-label fw-bold small">Bairro</label>
                             <input {...register("addresses.neighborhood")} className={`form-control ${errors.addresses?.neighborhood ? 'is-invalid' : ''}`} />
@@ -176,7 +225,17 @@ export default function Recipients() {
                         </div>
                         <div className="col-md-4">
                             <label className="form-label fw-bold small">UF</label>
-                            <input {...register("addresses.state")} maxLength="2" className={`form-control ${errors.addresses?.state ? 'is-invalid' : ''}`} />
+                            <select 
+                                {...register("addresses.state")}
+                                className={`form-select shadow-none ${errors.addresses?.state ? 'is-invalid' : ''}`}
+                            >
+                                <option value="">Selecione...</option>
+                                {ufList.map((uf) => (
+                                    <option key={uf.id} value={uf.sigla}>
+                                        {uf.sigla} - {uf.nome}
+                                    </option>
+                                ))}
+                            </select>
                             {errors.addresses?.state && <div className="invalid-feedback">{errors.addresses.state.message}</div>}
                         </div>
                     </form>

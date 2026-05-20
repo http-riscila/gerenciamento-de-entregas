@@ -19,31 +19,29 @@ async function create(deliveryData, userId) {
       }
     });
 
+    console.log("entrega:", delivery);
     return delivery;
   });
 }
 
 async function updateStatus(deliveryId, userId, updateData) {
-  return await prisma.$transaction(async (tx) => {
-    const updatedDelivery = await tx.delivery.update({
-      where: { id: Number(deliveryId) },
-      data: {
-        status: updateData.status,
-        driver_id: updateData.driver_id ? Number(updateData.driver_id) : undefined
-      }
-    });
-
-    await tx.deliveryLog.create({
-      data: {
-        delivery_id: updatedDelivery.id,
-        status_novo: updatedDelivery.status,
-        user_id: Number(userId),
-        note: updateData.note
-      }
-    });
-
-    return updatedDelivery;
+  const updatedDelivery = await prisma.delivery.update({
+    where: { id: Number(deliveryId) },
+    data: {
+      status: updateData.status,
+      driver_id: updateData.driver_id ? Number(updateData.driver_id) : undefined
+    }
   });
+
+  await prisma.deliveryLog.create({
+    data: {
+      status_novo: updatedDelivery.status,
+      note: updateData.note,
+      delivery_id: Number(deliveryId),
+      user_id: Number(userId)
+    }
+  });
+    return updatedDelivery;
 }
 
 async function getAll() {

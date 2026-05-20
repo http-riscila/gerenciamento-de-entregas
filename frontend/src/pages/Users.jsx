@@ -3,6 +3,7 @@ import api from "../api.js";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema } from "../validations/userSchema";
+import { useAuth } from "../context/AuthContext.jsx";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -12,6 +13,8 @@ import ModalWrapper from "../components/ModalWrapper";
 export default function Users() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    const { user } = useAuth()
     
     const [modalConfig, setModalConfig] = useState({
         show: false,
@@ -99,7 +102,7 @@ export default function Users() {
 
             <main className="container-fluid flex-grow-1 px-4 py-2 mt-4">
                 <ListTable 
-                    data={users} 
+                    data={users.filter(u => u.id !== user?.id)} 
                     onCreate={openCreate} 
                     onEdit={openEdit} 
                     onDelete={(id) => openDelete(users.find(u => u.id === id))}

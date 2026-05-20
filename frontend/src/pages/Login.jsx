@@ -25,7 +25,6 @@ export default function Login() {
             if (response.status === 200) {
                 const { user, token } = response.data;
                 login(user, token); 
-                console.log("Login realizado com sucesso!");
                 navigate('/home'); 
             }
 

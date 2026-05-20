@@ -2,7 +2,7 @@ import prisma from '../config/prisma.js';
 import bcrypt from 'bcrypt';
 
    async function getAll() {
-    return await prisma.user.findMany();
+    return await prisma.user.findMany({ where: { isActive: true } });
   }
 
    async function getById(id) {
@@ -28,7 +28,12 @@ import bcrypt from 'bcrypt';
   }
 
   async function remove(id){
-    return await prisma.user.delete({ where: { id: Number(id) } });
+    return await prisma.user.update({ 
+      where: { id: Number(id) },
+      data: {
+        isActive: false,
+      }
+    });
   }
 
   export default { getAll, getById, getByEmail, update, remove };

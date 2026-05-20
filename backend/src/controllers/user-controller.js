@@ -7,7 +7,7 @@ import UserService from '../services/user-service.js';
       return res.status(200).json(users);
 
     } catch (error) {
-      return res.status(500).json({ error: 'Erro ao buscar usuário', details: error.message });
+      return res.status(500).json({ error: 'Erro ao buscar usuários', details: error.message });
     }
   }
 
@@ -77,7 +77,7 @@ import UserService from '../services/user-service.js';
         return res.status(204).send();
 
     } catch (error) {
-        return res.status(500).json({ error: 'Erro ao remover usuário', details: error.message });
+        return res.status(500).json({ error: 'Erro ao desativar usuário', details: error.message });
     }
   }
 
